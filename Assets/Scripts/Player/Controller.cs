@@ -63,6 +63,9 @@ public class Controller : MonoBehaviour
 
     private float targetRotation = 0f;     // Целевой угол
 
+    /// <summary>Vertical movement intent in range [-1, 1] for thrust VFX (world Y, or forward/back in Astroids mode).</summary>
+    public float VerticalMoveIntent { get; private set; }
+
     // Whether the player can aim with the mouse or not
     private bool canAimWithMouse
     {
@@ -164,7 +167,10 @@ public class Controller : MonoBehaviour
             {
                 MoveShip();
             }
+
+            UpdateVerticalMoveIntentFromVelocity();
         }
+
         if (Input.touchCount >= 2)
         {
             Touch touchZero = Input.GetTouch(0);
@@ -188,10 +194,22 @@ public class Controller : MonoBehaviour
             float newRotation = Mathf.LerpAngle(transform.rotation.eulerAngles.z, targetRotation, Time.deltaTime * smoothingFactor);
             transform.rotation = Quaternion.Euler(0, 0, newRotation);
         }
-        else
+        else if (Input.touchCount == 0)
         {
             DecelerateShip(); // Торможение при отсутствии касания
+            UpdateVerticalMoveIntentFromVelocity();
         }
+    }
+
+    private void SetVerticalMoveIntent(float value)
+    {
+        VerticalMoveIntent = Mathf.Clamp(value, -1f, 1f);
+    }
+
+    private void UpdateVerticalMoveIntentFromVelocity()
+    {
+        float speedReference = Mathf.Max(baseMoveSpeed, moveSpeed, 0.01f);
+        SetVerticalMoveIntent(velocity.y / speedReference);
     }
 
     float AngleBetweenPoints(Vector2 pointA, Vector2 pointB)
@@ -301,7 +319,7 @@ public class Controller : MonoBehaviour
 
             // Move the player using physics
             Vector2 force = transform.up * movement.y * Time.deltaTime * moveSpeed;
-            Debug.Log(force);
+            SetVerticalMoveIntent(movement.y);
             myRigidbody.AddForce(force);
 
             // Rotate the player around the z axis
@@ -327,6 +345,7 @@ public class Controller : MonoBehaviour
             }
             // Move the player's transform
             transform.position = transform.position + (movement * Time.deltaTime * moveSpeed);
+            SetVerticalMoveIntent(movement.y);
         }
     }
 
