@@ -27049,9 +27049,25 @@ PrefabInstance:
       propertyPath: m_LocalScale.y
       value: 9
       objectReference: {fileID: 0}
+    - target: {fileID: 9010000000000000014, guid: f9b09d7adee881048a63dfe0f900e3b6, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9010000000000000016, guid: f9b09d7adee881048a63dfe0f900e3b6, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 9010000000000000021, guid: f9b09d7adee881048a63dfe0f900e3b6, type: 3}
       propertyPath: m_LocalScale.y
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 9010000000000000024, guid: f9b09d7adee881048a63dfe0f900e3b6, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9010000000000000025, guid: f9b09d7adee881048a63dfe0f900e3b6, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9010000000000000031, guid: f9b09d7adee881048a63dfe0f900e3b6, type: 3}
       propertyPath: m_LocalScale.y
@@ -27066,6 +27082,22 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9010000000000000061, guid: f9b09d7adee881048a63dfe0f900e3b6, type: 3}
+      propertyPath: m_SortingOrder
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9010000000000000071, guid: f9b09d7adee881048a63dfe0f900e3b6, type: 3}
+      propertyPath: m_SortingOrder
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9010000000000000081, guid: f9b09d7adee881048a63dfe0f900e3b6, type: 3}
+      propertyPath: m_SortingOrder
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9010000000000000092, guid: f9b09d7adee881048a63dfe0f900e3b6, type: 3}
+      propertyPath: m_SortingOrder
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9010000000000000093, guid: f9b09d7adee881048a63dfe0f900e3b6, type: 3}
       propertyPath: m_SortingOrder
       value: 1
       objectReference: {fileID: 0}

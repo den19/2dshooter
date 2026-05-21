@@ -1,7 +1,8 @@
 using UnityEngine;
 
 /// <summary>
-/// Drives main (rear) and reverse (nose) thrust sprite animations from <see cref="Controller.VerticalMoveIntent"/>.
+/// Drives player thrust sprite animations from <see cref="Controller.VerticalMoveIntent"/>
+/// and <see cref="Controller.HorizontalMoveIntent"/>.
 /// </summary>
 public class PlayerThrustVfx : MonoBehaviour
 {
@@ -10,6 +11,10 @@ public class PlayerThrustVfx : MonoBehaviour
     [SerializeField] private SpriteRenderer mainThrustRenderer;
     [SerializeField] private SpriteRenderer reverseLeftRenderer;
     [SerializeField] private SpriteRenderer reverseRightRenderer;
+    [SerializeField] private SpriteRenderer rightUpperThrustRenderer;
+    [SerializeField] private SpriteRenderer rightLowerThrustRenderer;
+    [SerializeField] private SpriteRenderer leftUpperThrustRenderer;
+    [SerializeField] private SpriteRenderer leftLowerThrustRenderer;
 
     [Header("Sprites")]
     [Tooltip("Thrust_Start, Thrust_Accelerate, then loop frames from PlayerThrust.png")]
@@ -23,6 +28,10 @@ public class PlayerThrustVfx : MonoBehaviour
 
     private bool mainThrustActive;
     private bool reverseThrustActive;
+    private bool rightUpperThrustActive;
+    private bool rightLowerThrustActive;
+    private bool leftUpperThrustActive;
+    private bool leftLowerThrustActive;
     private float frameTimer;
     private int frameIndex;
 
@@ -46,6 +55,10 @@ public class PlayerThrustVfx : MonoBehaviour
         SetRendererActive(mainThrustRenderer, false);
         SetRendererActive(reverseLeftRenderer, false);
         SetRendererActive(reverseRightRenderer, false);
+        SetRendererActive(rightUpperThrustRenderer, false);
+        SetRendererActive(rightLowerThrustRenderer, false);
+        SetRendererActive(leftUpperThrustRenderer, false);
+        SetRendererActive(leftLowerThrustRenderer, false);
     }
 
     private void LateUpdate()
@@ -55,31 +68,32 @@ public class PlayerThrustVfx : MonoBehaviour
             return;
         }
 
-        float intent = controller.VerticalMoveIntent;
-        UpdateThrustState(intent);
+        UpdateVerticalThrustState(controller.VerticalMoveIntent);
+        UpdateRightThrustState(controller.HorizontalMoveIntent, controller.VerticalMoveIntent);
+        UpdateLeftThrustState(controller.HorizontalMoveIntent, controller.VerticalMoveIntent);
         AnimateThrustSprites();
     }
 
-    private void UpdateThrustState(float intent)
+    private void UpdateVerticalThrustState(float verticalIntent)
     {
-        if (intent > activateThreshold)
+        if (verticalIntent > activateThreshold)
         {
             mainThrustActive = true;
             reverseThrustActive = false;
         }
-        else if (intent < -activateThreshold)
+        else if (verticalIntent < -activateThreshold)
         {
             mainThrustActive = false;
             reverseThrustActive = true;
         }
         else
         {
-            if (mainThrustActive && intent < deactivateThreshold)
+            if (mainThrustActive && verticalIntent < deactivateThreshold)
             {
                 mainThrustActive = false;
             }
 
-            if (reverseThrustActive && intent > -deactivateThreshold)
+            if (reverseThrustActive && verticalIntent > -deactivateThreshold)
             {
                 reverseThrustActive = false;
             }
@@ -88,18 +102,102 @@ public class PlayerThrustVfx : MonoBehaviour
         SetRendererActive(mainThrustRenderer, mainThrustActive);
         SetRendererActive(reverseLeftRenderer, reverseThrustActive);
         SetRendererActive(reverseRightRenderer, reverseThrustActive);
+    }
 
-        if (!mainThrustActive && !reverseThrustActive)
+    private void UpdateRightThrustState(float horizontalIntent, float verticalIntent)
+    {
+        if (horizontalIntent < -activateThreshold)
         {
-            frameTimer = 0f;
-            frameIndex = 0;
+            if (verticalIntent > activateThreshold)
+            {
+                rightUpperThrustActive = false;
+                rightLowerThrustActive = true;
+            }
+            else if (verticalIntent < -activateThreshold)
+            {
+                rightUpperThrustActive = true;
+                rightLowerThrustActive = false;
+            }
+            else
+            {
+                rightUpperThrustActive = true;
+                rightLowerThrustActive = true;
+            }
         }
+        else if (horizontalIntent > -deactivateThreshold)
+        {
+            rightUpperThrustActive = false;
+            rightLowerThrustActive = false;
+        }
+        else
+        {
+            if (rightUpperThrustActive && horizontalIntent > -deactivateThreshold)
+            {
+                rightUpperThrustActive = false;
+            }
+
+            if (rightLowerThrustActive && horizontalIntent > -deactivateThreshold)
+            {
+                rightLowerThrustActive = false;
+            }
+        }
+
+        SetRendererActive(rightUpperThrustRenderer, rightUpperThrustActive);
+        SetRendererActive(rightLowerThrustRenderer, rightLowerThrustActive);
+    }
+
+    private void UpdateLeftThrustState(float horizontalIntent, float verticalIntent)
+    {
+        if (horizontalIntent > activateThreshold)
+        {
+            if (verticalIntent > activateThreshold)
+            {
+                leftUpperThrustActive = false;
+                leftLowerThrustActive = true;
+            }
+            else if (verticalIntent < -activateThreshold)
+            {
+                leftUpperThrustActive = true;
+                leftLowerThrustActive = false;
+            }
+            else
+            {
+                leftUpperThrustActive = true;
+                leftLowerThrustActive = true;
+            }
+        }
+        else if (horizontalIntent < deactivateThreshold)
+        {
+            leftUpperThrustActive = false;
+            leftLowerThrustActive = false;
+        }
+        else
+        {
+            if (leftUpperThrustActive && horizontalIntent < deactivateThreshold)
+            {
+                leftUpperThrustActive = false;
+            }
+
+            if (leftLowerThrustActive && horizontalIntent < deactivateThreshold)
+            {
+                leftLowerThrustActive = false;
+            }
+        }
+
+        SetRendererActive(leftUpperThrustRenderer, leftUpperThrustActive);
+        SetRendererActive(leftLowerThrustRenderer, leftLowerThrustActive);
     }
 
     private void AnimateThrustSprites()
     {
-        if (!mainThrustActive && !reverseThrustActive)
+        bool anyActive = mainThrustActive || reverseThrustActive
+            || rightUpperThrustActive || rightLowerThrustActive
+            || leftUpperThrustActive || leftLowerThrustActive;
+
+        if (!anyActive)
         {
+            frameTimer = 0f;
+            frameIndex = 0;
             return;
         }
 
@@ -147,6 +245,26 @@ public class PlayerThrustVfx : MonoBehaviour
             {
                 reverseRightRenderer.sprite = frame;
             }
+        }
+
+        if (rightUpperThrustActive && rightUpperThrustRenderer != null)
+        {
+            rightUpperThrustRenderer.sprite = frame;
+        }
+
+        if (rightLowerThrustActive && rightLowerThrustRenderer != null)
+        {
+            rightLowerThrustRenderer.sprite = frame;
+        }
+
+        if (leftUpperThrustActive && leftUpperThrustRenderer != null)
+        {
+            leftUpperThrustRenderer.sprite = frame;
+        }
+
+        if (leftLowerThrustActive && leftLowerThrustRenderer != null)
+        {
+            leftLowerThrustRenderer.sprite = frame;
         }
     }
 
