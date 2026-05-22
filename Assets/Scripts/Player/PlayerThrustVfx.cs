@@ -25,6 +25,15 @@ public class PlayerThrustVfx : MonoBehaviour
     [SerializeField] private float deactivateThreshold = 0.08f;
     [SerializeField] private float animationFps = 12f;
     [SerializeField] private int loopStartFrameIndex = 2;
+    [Tooltip("How long the last active thrusters remain visible after movement stops.")]
+    [SerializeField] private float burnOutDuration = 1.5f;
+
+    [Header("Visual Juice")]
+    [Tooltip("Enable randomized high-frequency scale and alpha flickering to make the flames look hot and live.")]
+    [SerializeField] private bool enableFlicker = true;
+    [SerializeField] private float flickerScaleRangeX = 0.08f;
+    [SerializeField] private float flickerScaleRangeY = 0.15f;
+    [SerializeField] private float flickerAlphaRange = 0.15f;
 
     private bool mainThrustActive;
     private bool reverseThrustActive;
@@ -32,6 +41,23 @@ public class PlayerThrustVfx : MonoBehaviour
     private bool rightLowerThrustActive;
     private bool leftUpperThrustActive;
     private bool leftLowerThrustActive;
+
+    private bool lastMainThrustActive;
+    private bool lastReverseThrustActive;
+    private bool lastRightUpperThrustActive;
+    private bool lastRightLowerThrustActive;
+    private bool lastLeftUpperThrustActive;
+    private bool lastLeftLowerThrustActive;
+
+    private Vector3 mainThrustBaseScale;
+    private Vector3 reverseLeftBaseScale;
+    private Vector3 reverseRightBaseScale;
+    private Vector3 rightUpperBaseScale;
+    private Vector3 rightLowerBaseScale;
+    private Vector3 leftUpperBaseScale;
+    private Vector3 leftLowerBaseScale;
+
+    private float burnOutTimer;
     private float frameTimer;
     private int frameIndex;
 
@@ -52,6 +78,15 @@ public class PlayerThrustVfx : MonoBehaviour
             reverseRightRenderer.flipY = true;
         }
 
+        // Store original local scale values so we can flicker around them perfectly
+        if (mainThrustRenderer != null) mainThrustBaseScale = mainThrustRenderer.transform.localScale;
+        if (reverseLeftRenderer != null) reverseLeftBaseScale = reverseLeftRenderer.transform.localScale;
+        if (reverseRightRenderer != null) reverseRightBaseScale = reverseRightRenderer.transform.localScale;
+        if (rightUpperThrustRenderer != null) rightUpperBaseScale = rightUpperThrustRenderer.transform.localScale;
+        if (rightLowerThrustRenderer != null) rightLowerBaseScale = rightLowerThrustRenderer.transform.localScale;
+        if (leftUpperThrustRenderer != null) leftUpperBaseScale = leftUpperThrustRenderer.transform.localScale;
+        if (leftLowerThrustRenderer != null) leftLowerBaseScale = leftLowerThrustRenderer.transform.localScale;
+
         SetRendererActive(mainThrustRenderer, false);
         SetRendererActive(reverseLeftRenderer, false);
         SetRendererActive(reverseRightRenderer, false);
@@ -68,10 +103,149 @@ public class PlayerThrustVfx : MonoBehaviour
             return;
         }
 
-        UpdateVerticalThrustState(controller.VerticalMoveIntent);
-        UpdateRightThrustState(controller.HorizontalMoveIntent, controller.VerticalMoveIntent);
-        UpdateLeftThrustState(controller.HorizontalMoveIntent, controller.VerticalMoveIntent);
+        bool isMovingActive = Mathf.Abs(controller.VerticalMoveIntent) >= deactivateThreshold || 
+                             Mathf.Abs(controller.HorizontalMoveIntent) >= deactivateThreshold;
+
+        if (isMovingActive)
+        {
+            burnOutTimer = burnOutDuration;
+
+            UpdateVerticalThrustState(controller.VerticalMoveIntent);
+            UpdateRightThrustState(controller.HorizontalMoveIntent, controller.VerticalMoveIntent);
+            UpdateLeftThrustState(controller.HorizontalMoveIntent, controller.VerticalMoveIntent);
+
+            SaveLastActiveStates();
+        }
+        else
+        {
+            if (burnOutTimer > 0f)
+            {
+                burnOutTimer -= Time.deltaTime;
+                ApplyLastActiveStates();
+            }
+            else
+            {
+                ClearAllThrustStates();
+            }
+        }
+
         AnimateThrustSprites();
+        ApplyVisualEffects();
+    }
+
+    private void SaveLastActiveStates()
+    {
+        if (mainThrustActive || reverseThrustActive || 
+            rightUpperThrustActive || rightLowerThrustActive || 
+            leftUpperThrustActive || leftLowerThrustActive)
+        {
+            lastMainThrustActive = mainThrustActive;
+            lastReverseThrustActive = reverseThrustActive;
+            lastRightUpperThrustActive = rightUpperThrustActive;
+            lastRightLowerThrustActive = rightLowerThrustActive;
+            lastLeftUpperThrustActive = leftUpperThrustActive;
+            lastLeftLowerThrustActive = leftLowerThrustActive;
+        }
+    }
+
+    private void ApplyLastActiveStates()
+    {
+        mainThrustActive = lastMainThrustActive;
+        reverseThrustActive = lastReverseThrustActive;
+        rightUpperThrustActive = lastRightUpperThrustActive;
+        rightLowerThrustActive = lastRightLowerThrustActive;
+        leftUpperThrustActive = lastLeftUpperThrustActive;
+        leftLowerThrustActive = lastLeftLowerThrustActive;
+
+        SetRendererActive(mainThrustRenderer, mainThrustActive);
+        SetRendererActive(reverseLeftRenderer, reverseThrustActive);
+        SetRendererActive(reverseRightRenderer, reverseThrustActive);
+        SetRendererActive(rightUpperThrustRenderer, rightUpperThrustActive);
+        SetRendererActive(rightLowerThrustRenderer, rightLowerThrustActive);
+        SetRendererActive(leftUpperThrustRenderer, leftUpperThrustActive);
+        SetRendererActive(leftLowerThrustRenderer, leftLowerThrustActive);
+    }
+
+    private void ClearAllThrustStates()
+    {
+        mainThrustActive = false;
+        reverseThrustActive = false;
+        rightUpperThrustActive = false;
+        rightLowerThrustActive = false;
+        leftUpperThrustActive = false;
+        leftLowerThrustActive = false;
+
+        SetRendererActive(mainThrustRenderer, false);
+        SetRendererActive(reverseLeftRenderer, false);
+        SetRendererActive(reverseRightRenderer, false);
+        SetRendererActive(rightUpperThrustRenderer, false);
+        SetRendererActive(rightLowerThrustRenderer, false);
+        SetRendererActive(leftUpperThrustRenderer, false);
+        SetRendererActive(leftLowerThrustRenderer, false);
+
+        ResetRendererVisuals(mainThrustRenderer, mainThrustBaseScale);
+        ResetRendererVisuals(reverseLeftRenderer, reverseLeftBaseScale);
+        ResetRendererVisuals(reverseRightRenderer, reverseRightBaseScale);
+        ResetRendererVisuals(rightUpperThrustRenderer, rightUpperBaseScale);
+        ResetRendererVisuals(rightLowerThrustRenderer, rightLowerBaseScale);
+        ResetRendererVisuals(leftUpperThrustRenderer, leftUpperBaseScale);
+        ResetRendererVisuals(leftLowerThrustRenderer, leftLowerBaseScale);
+
+        lastMainThrustActive = false;
+        lastReverseThrustActive = false;
+        lastRightUpperThrustActive = false;
+        lastRightLowerThrustActive = false;
+        lastLeftUpperThrustActive = false;
+        lastLeftLowerThrustActive = false;
+    }
+
+    private void ResetRendererVisuals(SpriteRenderer renderer, Vector3 baseScale)
+    {
+        if (renderer == null) return;
+        renderer.transform.localScale = baseScale;
+        Color c = renderer.color;
+        c.a = 1f;
+        renderer.color = c;
+    }
+
+    private void ApplyVisualEffects()
+    {
+        bool isMovingActive = Mathf.Abs(controller.VerticalMoveIntent) >= deactivateThreshold || 
+                             Mathf.Abs(controller.HorizontalMoveIntent) >= deactivateThreshold;
+
+        // Base alpha is 1 when moving, and fades out beautifully during burnout duration
+        float baseAlpha = isMovingActive ? 1.0f : Mathf.Clamp01(burnOutTimer / burnOutDuration);
+
+        ApplyFlickerAndAlpha(mainThrustRenderer, mainThrustBaseScale, baseAlpha, mainThrustActive);
+        ApplyFlickerAndAlpha(reverseLeftRenderer, reverseLeftBaseScale, baseAlpha, reverseThrustActive);
+        ApplyFlickerAndAlpha(reverseRightRenderer, reverseRightBaseScale, baseAlpha, reverseThrustActive);
+        ApplyFlickerAndAlpha(rightUpperThrustRenderer, rightUpperBaseScale, baseAlpha, rightUpperThrustActive);
+        ApplyFlickerAndAlpha(rightLowerThrustRenderer, rightLowerBaseScale, baseAlpha, rightLowerThrustActive);
+        ApplyFlickerAndAlpha(leftUpperThrustRenderer, leftUpperBaseScale, baseAlpha, leftUpperThrustActive);
+        ApplyFlickerAndAlpha(leftLowerThrustRenderer, leftLowerBaseScale, baseAlpha, leftLowerThrustActive);
+    }
+
+    private void ApplyFlickerAndAlpha(SpriteRenderer renderer, Vector3 baseScale, float baseAlpha, bool isActive)
+    {
+        if (renderer == null) return;
+        if (!renderer.enabled || !isActive) return;
+
+        // High-frequency randomized scale fluctuation to look like turbulent plasma
+        float scaleModX = enableFlicker ? Random.Range(1f - flickerScaleRangeX, 1f + flickerScaleRangeX) : 1f;
+        float scaleModY = enableFlicker ? Random.Range(1f - flickerScaleRangeY, 1f + flickerScaleRangeY) : 1f;
+
+        renderer.transform.localScale = new Vector3(baseScale.x * scaleModX, baseScale.y * scaleModY, baseScale.z);
+
+        // Alpha fade out + micro-flicker
+        float finalAlpha = baseAlpha;
+        if (enableFlicker)
+        {
+            finalAlpha *= Random.Range(1f - flickerAlphaRange, 1f);
+        }
+
+        Color c = renderer.color;
+        c.a = Mathf.Clamp01(finalAlpha);
+        renderer.color = c;
     }
 
     private void UpdateVerticalThrustState(float verticalIntent)
