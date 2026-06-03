@@ -1,0 +1,11 @@
+fileFormatVersion: 2
+guid: d64ed9ce79da45f9b96e11cb52c1bc3e
+NativeFormatImporter:
+  userData: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 25468
+  packageName: 'Unity Samples: UI'
+  packageVersion: 1.2.2
+  assetPath: Assets/Unity UI Samples/Materials/Slider Fill.mat
+  uploadId: 424775

@@ -1,0 +1,11 @@
+fileFormatVersion: 2
+guid: f91dc4f40e154a53a007ff61b2dc5fe3
+NativeFormatImporter:
+  userData: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 25468
+  packageName: 'Unity Samples: UI'
+  packageVersion: 1.2.2
+  assetPath: Assets/Unity UI Samples/Prefabs/SF Button.prefab
+  uploadId: 424775

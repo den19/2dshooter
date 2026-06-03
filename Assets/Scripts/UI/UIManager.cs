@@ -1,132 +1,150 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.InputSystem;
-using UnityEngine.UI;
-using System.Linq;
 using UnityEngine.EventSystems;
+using System.Linq;
 
 /// <summary>
-/// A class which manages pages of UI elements
-/// and the game's UI
+/// Manages UI panels via PanelManager (Menu 3D style Animator flow).
 /// </summary>
 public class UIManager : MonoBehaviour
 {
     public static UIManager instance;
 
+    static readonly string[] MainMenuPanelNames = { "MainMenu", "LevelSelect", "Credits" };
+
     [Header("Page Management")]
-    [Tooltip("The pages (Panels) managed by the UI Manager")]
-    public List<UIPage> pages;
-    [Tooltip("The index of the active page in the UI")]
+    [Tooltip("Panel Animators managed by the UI Manager (each root has Panel or MainMenu controller)")]
+    public List<Animator> panels;
+    [Tooltip("The index of the active panel")]
     public int currentPage = 0;
-    [Tooltip("The page (by index) switched to when the UI Manager starts up")]
+    [Tooltip("Panel opened on startup (index). -1 = use PanelManager.initiallyOpen only")]
     public int defaultPage = 0;
 
+    [Header("Panel Manager")]
+    [Tooltip("PanelManager on this object or a child (e.g. MenuManager)")]
+    public PanelManager panelManager;
+
     [Header("Pause Settings")]
-    [Tooltip("The index of the pause page in the pages list")]
-    public int pausePageIndex = 1;
+    [Tooltip("The index of the pause panel in the panels list")]
+    public int pausePageIndex = 0;
     [Tooltip("Whether or not to allow pausing")]
     public bool allowPause = true;
 
     [Header("Input Actions & Controls")]
     public InputAction pauseAction;
 
-    // Whether or not the application is paused
     private bool isPaused = false;
-
-    // A list of all UI element classes
     private List<UIelement> UIelements;
 
-    // The event system handling UI navigation
     [HideInInspector]
     public EventSystem eventSystem;
 
-    /// <summary>
-    /// Standard Unity function called whenever the attached gameobject is enabled
-    /// </summary>
     private void OnEnable()
     {
         pauseAction.Enable();
     }
 
-    /// <summary>
-    /// Standard Unity function called whenever the attached gameobject is disabled
-    /// </summary>
     private void OnDisable()
     {
         pauseAction.Disable();
     }
 
-    /// <summary>
-    /// Description:
-    /// Finds and stores all UIElements in the UIElements list
-    /// Input:
-    /// None
-    /// Return:
-    /// void (no return)
-    /// </summary>
     private void SetUpUIElements()
     {
         UIelements = FindObjectsOfType<UIelement>().ToList();
     }
 
-    /// <summary>
-    /// Description:
-    /// Gets the event system from the scene if one exists
-    /// If one does not exist a warning will be displayed
-    /// Input:
-    /// None
-    /// Return:
-    /// void (no return)
-    /// </summary>
     private void SetUpEventSystem()
     {
         eventSystem = FindObjectOfType<EventSystem>();
         if (eventSystem == null)
         {
-            Debug.LogWarning("There is no event system in the scene but you are trying to use the UIManager. \n" +
-                "All UI in Unity requires an Event System to run. \n" + 
-                "You can add one by right clicking in hierarchy then selecting UI->EventSystem.");
+            Debug.LogWarning("There is no event system in the scene but you are trying to use the UIManager.");
         }
     }
 
-    /// <summary>
-    /// Description:
-    /// If the game is paused, unpauses the game.
-    /// If the game is not paused, pauses the game.
-    /// Inputs:
-    /// None
-    /// Retuns:
-    /// void (no return)
-    /// </summary>
-    public void TogglePause()
+    private void EnsurePanelManager()
     {
-        if (allowPause)
+        if (panelManager == null)
+            panelManager = GetComponent<PanelManager>();
+        if (panelManager == null)
+            panelManager = GetComponentInChildren<PanelManager>();
+
+        if (panelManager == null)
         {
-            if (isPaused)
+            var canvas = GameObject.Find("MainMenuCanvas");
+            if (canvas != null)
             {
-                SetActiveAllPages(false);
-                Time.timeScale = 1;
-                isPaused = false;
+                var menuManager = canvas.transform.Find("MenuManager");
+                if (menuManager != null)
+                    panelManager = menuManager.GetComponent<PanelManager>();
             }
-            else
-            {
-                GoToPage(pausePageIndex);
-                Time.timeScale = 0;
-                isPaused = true;
-            }
-        }      
+        }
+
+        if (panelManager == null)
+            panelManager = FindAnyObjectByType<PanelManager>();
     }
 
-    /// <summary>
-    /// Description:
-    /// Goes through all UI elements and calls their UpdateUI function
-    /// Input:
-    /// None
-    /// Return:
-    /// void (no return)
-    /// </summary>
+    private bool PanelsListHasValidEntry()
+    {
+        if (panels == null || panels.Count == 0)
+            return false;
+        foreach (var panel in panels)
+        {
+            if (panel != null)
+                return true;
+        }
+        return false;
+    }
+
+    private void EnsureMainMenuPanelsResolved()
+    {
+        if (PanelsListHasValidEntry())
+            return;
+
+        var canvas = GameObject.Find("MainMenuCanvas");
+        if (canvas == null)
+            return;
+
+        if (panels == null)
+            panels = new List<Animator>();
+        else
+            panels.Clear();
+
+        foreach (var panelName in MainMenuPanelNames)
+        {
+            foreach (Transform child in canvas.transform)
+            {
+                if (child.name != panelName)
+                    continue;
+                var anim = child.GetComponent<Animator>();
+                if (anim != null)
+                    panels.Add(anim);
+                break;
+            }
+        }
+    }
+
+    public void TogglePause()
+    {
+        if (!allowPause || panelManager == null)
+            return;
+
+        if (isPaused)
+        {
+            panelManager.CloseCurrent();
+            Time.timeScale = 1;
+            isPaused = false;
+        }
+        else if (pausePageIndex >= 0 && pausePageIndex < panels.Count && panels[pausePageIndex] != null)
+        {
+            GoToPage(pausePageIndex);
+            Time.timeScale = 0;
+            isPaused = true;
+        }
+    }
+
     public void UpdateUI()
     {
         SetUpUIElements();
@@ -136,57 +154,40 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Standard Unity function called once when the script instance first exists in runtime of the game. Called before Start.
-    /// </summary>
     private void Awake()
     {
         if (instance == null)
-        {
             instance = this;
-        }
         else
-        {
             Destroy(this);
-        }
     }
 
-    /// <summary>
-    /// Description:
-    /// Default Unity function that runs once when the script is first started and before Update
-    /// Inputs: 
-    /// none
-    /// Returns: 
-    /// void (no return)
-    /// </summary>
     private void Start()
     {
+        EnsureMainMenuPanelsResolved();
+        EnsurePanelManager();
         SetUpEventSystem();
         SetUpUIElements();
         UpdateUI();
+
+        if (defaultPage >= 0 && defaultPage < panels.Count && panels[defaultPage] != null
+            && panelManager != null && panelManager.initiallyOpen == null)
+        {
+            GoToPage(defaultPage);
+        }
     }
 
     private bool isFirstTouchDown = false;
     private float firstTouchTime = 0f;
-    private const float DOUBLE_TAP_INTERVAL = 0.3f; // интервал между двумя касаниями (секунды)
+    private const float DOUBLE_TAP_INTERVAL = 0.3f;
 
-    /// <summary>
-    /// Description:
-    /// Default function from Unity that runs every frame
-    /// Inputs: 
-    /// none
-    /// Returns: 
-    /// void (no return)
-    /// </summary>
     private void Update()
     {
         CheckPauseInput();
         if (Application.platform == RuntimePlatform.Android)
         {
             if (Input.touchCount > 0 && Input.GetTouch(0).phase == UnityEngine.TouchPhase.Began)
-            {
                 HandleTouch();
-            }
         }
     }
 
@@ -194,21 +195,17 @@ public class UIManager : MonoBehaviour
     {
         if (!isFirstTouchDown)
         {
-            // Первое касание
             isFirstTouchDown = true;
-            firstTouchTime = Time.time;
+            firstTouchTime = Time.unscaledTime;
         }
         else
         {
-            // Проверяем, прошло ли достаточно времени с первого касания
-            if ((Time.time - firstTouchTime) <= DOUBLE_TAP_INTERVAL)
-            {
-                OnDoubleTap(); // Выполняем событие двойного касания
-            }
-
-            ResetTouchState(); // Обнуляем состояние касания
+            if ((Time.unscaledTime - firstTouchTime) <= DOUBLE_TAP_INTERVAL)
+                OnDoubleTap();
+            ResetTouchState();
         }
     }
+
     void ResetTouchState()
     {
         isFirstTouchDown = false;
@@ -220,73 +217,82 @@ public class UIManager : MonoBehaviour
         TogglePause();
     }
 
-    /// <summary>
-    /// Description:
-    /// If the input manager is set up, reads the pause input
-    /// Inputs:
-    /// none
-    /// Returns:
-    /// void (no return)
-    /// </summary>
     private void CheckPauseInput()
     {
         if (pauseAction.triggered)
-        {
             TogglePause();
-        }
     }
-    /// <summary>
-    /// Description:
-    /// Goes to a page by that page's index
-    /// Inputs: 
-    /// int page
-    /// Returns: 
-    /// void (no return)
-    /// </summary>
-    /// <param name="pageIndex">The index in the page list to go to</param>
+
     public void GoToPage(int pageIndex)
     {
-        if (pageIndex < pages.Count && pages[pageIndex] != null)
+        EnsureMainMenuPanelsResolved();
+        if (pageIndex < 0 || pageIndex >= panels.Count || panels[pageIndex] == null)
+            return;
+
+        EnsurePanelManager();
+        if (panelManager != null)
+            panelManager.OpenPanel(panels[pageIndex]);
+        else
+            panels[pageIndex].gameObject.SetActive(true);
+
+        currentPage = pageIndex;
+    }
+
+    public void GoToPageByName(string pageName)
+    {
+        EnsureMainMenuPanelsResolved();
+        if (panels == null)
+            return;
+
+        for (int i = 0; i < panels.Count; i++)
         {
-            SetActiveAllPages(false);
-            pages[pageIndex].gameObject.SetActive(true);
-            pages[pageIndex].SetSelectedUIToDefault();
+            if (panels[i] != null && panels[i].gameObject.name == pageName)
+            {
+                GoToPage(i);
+                return;
+            }
         }
     }
 
-    /// <summary>
-    /// Description:
-    /// Goes to a page by that page's name
-    /// Inputs: 
-    /// string pageName
-    /// Returns: 
-    /// void (no return)
-    /// </summary>
-    /// <param name="pageName">The name of the page in the game you want to go to, if their are duplicates this picks the first found</param>
-    public void GoToPageByName(string pageName)
+    public void CloseCurrentPanel()
     {
-        UIPage page = pages.Find(item => item.name == pageName);
-        int pageIndex = pages.IndexOf(page);
-        GoToPage(pageIndex);
+        EnsurePanelManager();
+        if (panelManager != null)
+            panelManager.CloseCurrent();
     }
 
     /// <summary>
-    /// Description:
-    /// Turns all stored pages on or off depending on parameters
-    /// Input: 
-    /// bool enable
-    /// Returns: 
-    /// void (no return)
+    /// Opens main menu panel after closing sub-panel (Level Select / Credits back flow).
     /// </summary>
-    /// <param name="activated">The true or false value to set all page game object's activeness to</param>
+    public void BackToMainMenuPanel()
+    {
+        CloseCurrentPanel();
+        GoToPageByName("MainMenu");
+    }
+
     public void SetActiveAllPages(bool activated)
     {
-        if (pages != null)
+        if (panels == null)
+            return;
+
+        if (!activated)
         {
-            foreach (UIPage page in pages)
+            EnsurePanelManager();
+            if (panelManager != null)
+                panelManager.CloseCurrent();
+        }
+
+        foreach (Animator panel in panels)
+        {
+            if (panel != null)
             {
-                if (page != null)
-                    page.gameObject.SetActive(activated);
+                if (!activated)
+                {
+                    panel.SetBool("Open", false);
+                    panel.gameObject.SetActive(false);
+                }
+                else
+                    panel.gameObject.SetActive(true);
             }
         }
     }

@@ -1,0 +1,11 @@
+fileFormatVersion: 2
+guid: 7c7a32c045fd4242a1fab4ada37d8b55
+NativeFormatImporter:
+  userData: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 25468
+  packageName: 'Unity Samples: UI'
+  packageVersion: 1.2.2
+  assetPath: Assets/Unity UI Samples/Animation/Panel/Closing.anim
+  uploadId: 424775

@@ -1,0 +1,11 @@
+fileFormatVersion: 2
+guid: e282821fa50f4b808dd93f1e3bbe99ad
+NativeFormatImporter:
+  userData: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 25468
+  packageName: 'Unity Samples: UI'
+  packageVersion: 1.2.2
+  assetPath: Assets/Unity UI Samples/Materials/Slider Background.mat
+  uploadId: 424775

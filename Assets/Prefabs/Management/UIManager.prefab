@@ -44,12 +44,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1180636e0c9d2c14fb8dbba577f09731, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pages:
+  panels:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
   currentPage: 0
-  defaultPage: 0
+  defaultPage: -1
+  panelManager: {fileID: 0}
   pausePageIndex: 0
   allowPause: 1
   pauseAction:

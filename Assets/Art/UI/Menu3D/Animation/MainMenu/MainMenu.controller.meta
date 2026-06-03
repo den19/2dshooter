@@ -1,0 +1,11 @@
+fileFormatVersion: 2
+guid: 5321da4ac2404244b7896a5af9fe08e3
+NativeFormatImporter:
+  userData: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 25468
+  packageName: 'Unity Samples: UI'
+  packageVersion: 1.2.2
+  assetPath: Assets/Unity UI Samples/Animation/MainMenu/MainMenu.controller
+  uploadId: 424775
