@@ -1,20 +1,39 @@
-Menu 3D UI assets live in this folder (animations, SF prefabs, fonts).
-
-After pulling these changes, open the project in Unity and run:
-  Tools > 2D Shooter > Setup Menu 3D UI (All)
-
-That applies the full Menu 3D stack to the main menu scene and prefab:
-  - GUI Camera, world-space panel canvases, Window + TiltWindow parallax
-  - SF Scene Elements backdrop
-  - PanelManager wiring for MainMenu, Level Select, and Credits
-  - SF Window frame and SF Title on Level Select and Credits sub-panels
-  - SF buttons (Jupiter font, hover animation) on hub and sub-panel actions
-
-Or run individual steps:
-  Tools > 2D Shooter > Setup Menu 3D UI (MainMenu Scene)
-  Tools > 2D Shooter > Setup Menu 3D UI (MainMenu Prefab)
-  Tools > 2D Shooter > Apply SF Buttons (Main Menu)
-  Tools > 2D Shooter > Apply SF Buttons (Sub-Panels)
-
-Sub-panel SF buttons: Level Select (back + Level 1/2/3), Credits (back).
-
+Menu 3D UI assets live in this folder (animations, SF prefabs, fonts).
+
+
+
+After pulling these changes, open the project in Unity and run:
+
+  Tools > 2D Shooter > Setup Menu 3D UI (All)
+
+
+
+That applies the full Menu 3D stack to the main menu scene and prefab:
+
+  - GUI Camera, world-space panel canvases, Window + TiltWindow parallax
+
+  - SF Scene Elements backdrop
+
+  - PanelManager wiring for MainMenu, Level Select, and Credits
+
+  - SF Window frame and SF Title on Level Select and Credits sub-panels
+
+  - SF buttons (Jupiter font, hover animation) on hub and sub-panel actions
+
+
+
+Or run individual steps:
+
+  Tools > 2D Shooter > Setup Menu 3D UI (MainMenu Scene)
+
+  Tools > 2D Shooter > Setup Menu 3D UI (MainMenu Prefab)
+
+  Tools > 2D Shooter > Apply SF Buttons (Main Menu)
+
+  Tools > 2D Shooter > Apply SF Buttons (Sub-Panels)
+
+
+
+Sub-panel SF buttons: Level Select (back + Level 1/2/3), Credits (back).
+
+
