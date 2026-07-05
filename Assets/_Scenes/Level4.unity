@@ -64374,6 +64374,14 @@ PrefabInstance:
       propertyPath: m_SizeDelta.y
       value: 600
       objectReference: {fileID: 0}
+    - target: {fileID: 783350729113663203, guid: 7135b71d079e09345a61f0a94d870493, type: 3}
+      propertyPath: m_Type
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 783350729113663203, guid: 7135b71d079e09345a61f0a94d870493, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: d3ad346b695d4b9ea44c4aff82220e3d, type: 3}
     - target: {fileID: 1430273938801649437, guid: 7135b71d079e09345a61f0a94d870493, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
@@ -64382,6 +64390,10 @@ PrefabInstance:
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: LoadLevelByName
       objectReference: {fileID: 0}
+    - target: {fileID: 1440937326698255089, guid: 7135b71d079e09345a61f0a94d870493, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: d3ad346b695d4b9ea44c4aff82220e3d, type: 3}
     - target: {fileID: 2069777478627027521, guid: 7135b71d079e09345a61f0a94d870493, type: 3}
       propertyPath: m_fontSize
       value: 30
@@ -64470,6 +64482,14 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4885136445134464248, guid: 7135b71d079e09345a61f0a94d870493, type: 3}
+      propertyPath: m_Type
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4885136445134464248, guid: 7135b71d079e09345a61f0a94d870493, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: d3ad346b695d4b9ea44c4aff82220e3d, type: 3}
     - target: {fileID: 5003018752105984616, guid: 7135b71d079e09345a61f0a94d870493, type: 3}
       propertyPath: m_SizeDelta.y
       value: 600
@@ -64691,12 +64711,9 @@ MonoBehaviour:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 534377449}
   - {fileID: 583767811}
-  - {fileID: 650237385}
   - {fileID: 860305745}
   - {fileID: 1316940801}
-  - {fileID: 1391327325}
   - {fileID: 3218497878148296273}
   - {fileID: 1855735434}
   - {fileID: 481415246}
