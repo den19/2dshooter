@@ -149,6 +149,333 @@ public static class Menu3DUISetup
         Debug.Log("MainMenu prefab Menu 3D styling applied.");
     }
 
+    static readonly string[] InGameLevelScenePaths =
+    {
+        "Assets/_Scenes/Level1.unity",
+        "Assets/_Scenes/Level3.unity",
+        "Assets/_Scenes/Level4.unity",
+    };
+
+    const string CanvasInGameUIPath = "Assets/Prefabs/UI/CanvasInGameUI.prefab";
+    const float PausePanelWidth = 400f;
+    const float PausePanelHeight = 600f;
+    const float PauseBackdropWidth = 800f;
+    const float PauseBackdropHeight = 1300f;
+
+    [MenuItem("Tools/2D Shooter/Fix In-Game Pause Menu (Level Scenes)")]
+    public static void FixInGamePauseMenus()
+    {
+        var activeScenePath = EditorSceneManager.GetActiveScene().path;
+
+        foreach (var scenePath in InGameLevelScenePaths)
+        {
+            if (!System.IO.File.Exists(scenePath))
+            {
+                Debug.LogWarning($"Scene not found: {scenePath}");
+                continue;
+            }
+
+            var scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+            if (FixInGamePauseMenuInOpenScene(scenePath))
+            {
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+                Debug.Log($"Fixed in-game pause menu in {scenePath}.");
+            }
+        }
+
+        if (!string.IsNullOrEmpty(activeScenePath) && System.IO.File.Exists(activeScenePath))
+            EditorSceneManager.OpenScene(activeScenePath, OpenSceneMode.Single);
+
+        AssetDatabase.SaveAssets();
+        Debug.Log("In-game pause menu fix complete for Level1, Level3, and Level4.");
+    }
+
+    /// <summary>
+    /// Entry point for Unity batchmode (-executeMethod Menu3DUISetup.FixInGamePauseMenusBatch).
+    /// </summary>
+    public static void FixInGamePauseMenusBatch()
+    {
+        EditorApplication.update += RunFixInGamePauseMenusWhenReady;
+    }
+
+    static void RunFixInGamePauseMenusWhenReady()
+    {
+        if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+            return;
+
+        EditorApplication.update -= RunFixInGamePauseMenusWhenReady;
+        try
+        {
+            FixInGamePauseMenus();
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogException(ex);
+            EditorApplication.Exit(1);
+            return;
+        }
+
+        EditorApplication.Exit(0);
+    }
+
+    /// <summary>
+    /// Repairs in-game pause menu wiring in the currently open level scene.
+    /// Used by batch fix and Level4 setup to match Level2 pause behavior.
+    /// </summary>
+    public static bool FixInGamePauseMenuInOpenScene(string scenePath)
+    {
+        var canvasRoot = FindCanvasInGameUIRoot();
+        if (canvasRoot == null)
+        {
+            Debug.LogWarning($"CanvasInGameUI not found in {scenePath}.");
+            return false;
+        }
+
+        RemoveLegacyPausePanels(canvasRoot.transform);
+        RemoveOrphanLegacyPauseUi(canvasRoot.transform);
+        RestorePrefabPausePanel(canvasRoot);
+
+        var pausePanel = FindMenu3DPausePanel(canvasRoot.transform);
+        if (pausePanel == null)
+        {
+            Debug.LogError($"Menu 3D Pause Screen not found in {scenePath} after restore.");
+            return false;
+        }
+
+        var pauseAnim = SetupPanelRoot(pausePanel, LoadController(PanelControllerPath), false, useGameplayCamera: true);
+        ApplyPausePanelSizing(pausePanel);
+        EnsureUICameraBinder(canvasRoot);
+
+        var uiManager = Object.FindFirstObjectByType<UIManager>();
+        if (uiManager != null)
+            RewireUIManagerPausePanel(uiManager, pauseAnim, canvasRoot.transform);
+        else
+            Debug.LogWarning($"UIManager not found in {scenePath}.");
+
+        NormalizeCanvasScaler(canvasRoot);
+        PrefabUtility.RecordPrefabInstancePropertyModifications(canvasRoot);
+
+        var unpause = FindButtonByName(pausePanel, "Unpause");
+        if (unpause != null && uiManager != null)
+        {
+            unpause.onClick.RemoveAllListeners();
+            unpause.onClick.AddListener(uiManager.TogglePause);
+        }
+
+        return true;
+    }
+
+    static GameObject FindCanvasInGameUIRoot()
+    {
+        foreach (var canvas in Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (canvas.gameObject.name == "CanvasInGameUI")
+                return canvas.gameObject;
+        }
+
+        return GameObject.Find("CanvasInGameUI");
+    }
+
+    public static bool IsMenu3DPausePanel(Transform t)
+    {
+        if (t == null || t.name != "Pause Screen")
+            return false;
+        if (t.Find("Window") == null)
+            return false;
+        var canvas = t.GetComponent<Canvas>();
+        return canvas != null && canvas.renderMode == RenderMode.WorldSpace;
+    }
+
+    public static Animator FindMenu3DPauseAnimator()
+    {
+        var canvasRoot = FindCanvasInGameUIRoot();
+        if (canvasRoot == null)
+            return null;
+
+        var pausePanel = FindMenu3DPausePanel(canvasRoot.transform);
+        return pausePanel != null ? pausePanel.GetComponent<Animator>() : null;
+    }
+
+    static GameObject FindMenu3DPausePanel(Transform canvasRoot)
+    {
+        foreach (Transform child in canvasRoot)
+        {
+            if (IsMenu3DPausePanel(child))
+                return child.gameObject;
+        }
+
+        foreach (var t in canvasRoot.GetComponentsInChildren<Transform>(true))
+        {
+            if (IsMenu3DPausePanel(t))
+                return t.gameObject;
+        }
+
+        return null;
+    }
+
+    static void RemoveLegacyPausePanels(Transform canvasRoot)
+    {
+        var toDestroy = new List<GameObject>();
+        foreach (Transform child in canvasRoot)
+        {
+            if (child.name == "Pause Screen" && !IsMenu3DPausePanel(child))
+                toDestroy.Add(child.gameObject);
+        }
+
+        foreach (var go in toDestroy)
+            Object.DestroyImmediate(go);
+    }
+
+    static void RemoveOrphanLegacyPauseUi(Transform canvasRoot)
+    {
+        var toDestroy = new List<GameObject>();
+        foreach (var go in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (go.transform.parent != null)
+                continue;
+            if (go.transform.IsChildOf(canvasRoot))
+                continue;
+            if (PrefabUtility.GetOutermostPrefabInstanceRoot(go) != null)
+                continue;
+
+            if (IsOrphanLegacyPauseTitle(go) || IsOrphanLegacyUnpauseButton(go))
+                toDestroy.Add(go);
+        }
+
+        foreach (var go in toDestroy)
+            Object.DestroyImmediate(go);
+    }
+
+    static bool IsOrphanLegacyPauseTitle(GameObject go)
+    {
+        if (go.name != "Title")
+            return false;
+
+        var tmp = go.GetComponent<TMPro.TextMeshProUGUI>();
+        return tmp != null && tmp.text == "Paused";
+    }
+
+    static bool IsOrphanLegacyUnpauseButton(GameObject go)
+    {
+        return go.name.Contains("Unpause") && go.GetComponent<Button>() != null;
+    }
+
+    static void RestorePrefabPausePanel(GameObject canvasInstanceRoot)
+    {
+        var prefabRoot = PrefabUtility.GetOutermostPrefabInstanceRoot(canvasInstanceRoot);
+        if (prefabRoot == null)
+            prefabRoot = canvasInstanceRoot;
+
+        if (FindMenu3DPausePanel(prefabRoot.transform) != null)
+            return;
+
+        var assetPause = AssetDatabase.LoadAssetAtPath<GameObject>(CanvasInGameUIPath);
+        if (assetPause == null)
+            return;
+
+        var assetPausePanel = FindPanelRoot(assetPause.transform, "Pause Screen");
+        if (assetPausePanel == null)
+            return;
+
+        PrefabUtility.RevertRemovedGameObject(prefabRoot, assetPausePanel, InteractionMode.AutomatedAction);
+    }
+
+    static void ApplyPausePanelSizing(GameObject pausePanel)
+    {
+        var panelRt = pausePanel.GetComponent<RectTransform>();
+        if (panelRt != null)
+            panelRt.sizeDelta = new Vector2(PausePanelWidth, PausePanelHeight);
+
+        var backdropRt = FindPauseBackdropRect(pausePanel.transform);
+        if (backdropRt != null && backdropRt != panelRt)
+            backdropRt.sizeDelta = new Vector2(PauseBackdropWidth, PauseBackdropHeight);
+
+        EditorUtility.SetDirty(pausePanel);
+    }
+
+    static RectTransform FindPauseBackdropRect(Transform pausePanel)
+    {
+        var window = pausePanel.Find("Window");
+        if (window != null)
+        {
+            var backdrop = window.Find("UIBackdrop");
+            if (backdrop != null)
+                return backdrop.GetComponent<RectTransform>();
+
+            foreach (Transform child in window)
+            {
+                if (child.name == "Title")
+                    continue;
+                var rt = child.GetComponent<RectTransform>();
+                if (rt != null && child.GetComponent<Image>() != null)
+                    return rt;
+            }
+        }
+
+        if (pausePanel.GetComponent<Image>() != null)
+            return pausePanel.GetComponent<RectTransform>();
+
+        return null;
+    }
+
+    static void RewireUIManagerPausePanel(UIManager uiManager, Animator pauseAnim, Transform canvasRoot)
+    {
+        var panels = uiManager.panels != null ? new List<Animator>(uiManager.panels) : new List<Animator>();
+        while (panels.Count < 3)
+            panels.Add(null);
+
+        if (panels[1] == null)
+            panels[1] = FindPanelAnimator(canvasRoot, "GameOverScreen");
+        if (panels[2] == null)
+            panels[2] = FindPanelAnimator(canvasRoot, "LevelVictoryScreen");
+
+        panels[0] = pauseAnim;
+        if (panels.Count > 3)
+            panels.RemoveRange(3, panels.Count - 3);
+
+        var so = new SerializedObject(uiManager);
+        var panelsProp = so.FindProperty("panels");
+        panelsProp.arraySize = 3;
+        for (int i = 0; i < 3; i++)
+            panelsProp.GetArrayElementAtIndex(i).objectReferenceValue = panels[i];
+        so.FindProperty("pausePageIndex").intValue = 0;
+        so.ApplyModifiedPropertiesWithoutUndo();
+
+        uiManager.panels = panels;
+        uiManager.pausePageIndex = 0;
+        EditorUtility.SetDirty(uiManager);
+    }
+
+    static Animator FindPanelAnimator(Transform canvasRoot, string panelName)
+    {
+        foreach (Transform child in canvasRoot)
+        {
+            if (child.name != panelName)
+                continue;
+            var anim = child.GetComponent<Animator>();
+            if (anim != null)
+                return anim;
+        }
+
+        foreach (var anim in canvasRoot.GetComponentsInChildren<Animator>(true))
+        {
+            if (anim.gameObject.name == panelName)
+                return anim;
+        }
+
+        return null;
+    }
+
+    static void NormalizeCanvasScaler(GameObject canvasRoot)
+    {
+        var scaler = canvasRoot.GetComponent<CanvasScaler>();
+        if (scaler == null)
+            return;
+        scaler.matchWidthOrHeight = 0.5f;
+        EditorUtility.SetDirty(scaler);
+    }
+
     [MenuItem("Tools/2D Shooter/Setup Menu 3D UI (CanvasInGameUI Prefab)")]
     public static void SetupCanvasInGameUIPrefab()
     {
@@ -549,6 +876,15 @@ public static class Menu3DUISetup
         var backdrop = contentRoot.Find("UIBackdrop");
         if (backdrop != null)
         {
+            var rt = backdrop.GetComponent<RectTransform>();
+            if (rt != null)
+            {
+                rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.anchoredPosition = new Vector2(0f, rt.anchoredPosition.y);
+                EditorUtility.SetDirty(rt);
+            }
+
             var img = backdrop.GetComponent<Image>();
             if (img != null)
             {
@@ -646,7 +982,7 @@ public static class Menu3DUISetup
         if (levelSelectPanel == null)
             return;
 
-        foreach (var name in new[] { "LevelTwoButton", "LevelThreeButton" })
+        foreach (var name in new[] { "LevelTwoButton", "LevelThreeButton", "LevelFourButton" })
         {
             foreach (var t in levelSelectPanel.GetComponentsInChildren<Transform>(true))
             {

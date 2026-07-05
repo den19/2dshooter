@@ -26,7 +26,8 @@ public static class SfMainMenuButtonStyler
         "MainMenuButton",
         "LevelOneButton",
         "LevelTwoButton",
-        "LevelThreeButton"
+        "LevelThreeButton",
+        "LevelFourButton"
     };
 
     public static readonly string[] CreditsButtonNames =

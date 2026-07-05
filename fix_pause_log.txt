@@ -1,0 +1,22 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+Built from '6000.4/staging' branch; Version is '6000.4.5f1 (cc83ebd631f8) revision 13403115'; Using compiler version '194234433'; Build Type 'Release'
+OS: 'Windows 11  (10.0.26200) Professional' Language: 'en' Physical Memory: 40686 MB
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-den" at "2026-07-05T01:29:34.3608568Z"
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
+System  architecture: x64
+Process architecture: x64
+Date: 2026-07-05T01:29:34Z
+
+COMMAND LINE ARGUMENTS:
+C:\Program Files\Unity\Hub\Editor\6000.4.5f1\Editor\Unity.exe
+-batchmode
+-quit
+-projectPath
+c:\git\2dshooter
+-executeMethod
+Menu3DUISetup.FixInGamePauseMenusBatch
+-logFile
+c:\git\2dshooter\fix_pause_log.txt
+Successfully changed project path to: c:\git\2dshooter
+C:/git/2dshooter
+Exiting without the bug reporter. Application will terminate with return code 1
