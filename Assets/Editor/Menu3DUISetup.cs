@@ -152,13 +152,14 @@ public static class Menu3DUISetup
     static readonly string[] InGameLevelScenePaths =
     {
         "Assets/_Scenes/Level1.unity",
+        "Assets/_Scenes/Level2.unity",
         "Assets/_Scenes/Level3.unity",
         "Assets/_Scenes/Level4.unity",
     };
 
     const string CanvasInGameUIPath = "Assets/Prefabs/UI/CanvasInGameUI.prefab";
-    const float PausePanelWidth = 400f;
-    const float PausePanelHeight = 600f;
+    const float PausePanelWidth = InGameButtonLayout.ReferenceWidth;
+    const float PausePanelHeight = InGameButtonLayout.DefaultPausePanelHeight;
     const float PauseBackdropWidth = 800f;
     const float PauseBackdropHeight = 1300f;
 
@@ -188,7 +189,7 @@ public static class Menu3DUISetup
             EditorSceneManager.OpenScene(activeScenePath, OpenSceneMode.Single);
 
         AssetDatabase.SaveAssets();
-        Debug.Log("In-game pause menu fix complete for Level1, Level3, and Level4.");
+        Debug.Log("In-game pause menu fix complete for Level1, Level2, Level3, and Level4.");
     }
 
     /// <summary>
@@ -244,8 +245,10 @@ public static class Menu3DUISetup
         }
 
         var pauseAnim = SetupPanelRoot(pausePanel, LoadController(PanelControllerPath), false, useGameplayCamera: true);
+        EnsurePausePanelClosed(pausePanel);
         ApplyPausePanelSizing(pausePanel);
         EnsureUICameraBinder(canvasRoot);
+        EnsureInGameButtonLayout(canvasRoot);
 
         var uiManager = Object.FindFirstObjectByType<UIManager>();
         if (uiManager != null)
@@ -262,6 +265,8 @@ public static class Menu3DUISetup
             unpause.onClick.RemoveAllListeners();
             unpause.onClick.AddListener(uiManager.TogglePause);
         }
+
+        SfMainMenuButtonStyler.ApplyToPausePanelInScene(pausePanel.transform);
 
         return true;
     }
@@ -358,7 +363,9 @@ public static class Menu3DUISetup
 
     static bool IsOrphanLegacyUnpauseButton(GameObject go)
     {
-        return go.name.Contains("Unpause") && go.GetComponent<Button>() != null;
+        if (go.name.Contains("Unpause") && go.GetComponent<Button>() != null)
+            return true;
+        return go.name == "Main Menu Button (1)" && go.GetComponent<Button>() != null;
     }
 
     static void RestorePrefabPausePanel(GameObject canvasInstanceRoot)
@@ -391,6 +398,18 @@ public static class Menu3DUISetup
         if (backdropRt != null && backdropRt != panelRt)
             backdropRt.sizeDelta = new Vector2(PauseBackdropWidth, PauseBackdropHeight);
 
+        EditorUtility.SetDirty(pausePanel);
+    }
+
+    static void EnsurePausePanelClosed(GameObject pausePanel)
+    {
+        if (pausePanel == null)
+            return;
+
+        pausePanel.SetActive(false);
+        var pauseAnimator = pausePanel.GetComponent<Animator>();
+        if (pauseAnimator != null)
+            pauseAnimator.SetBool("Open", false);
         EditorUtility.SetDirty(pausePanel);
     }
 
@@ -493,6 +512,7 @@ public static class Menu3DUISetup
         RemoveGuiCameraFromHierarchy(root.transform);
         ConfigureInGameRootCanvas(canvas);
         EnsureUICameraBinder(canvas);
+        EnsureInGameButtonLayout(canvas);
 
         var pause = FindPanelRoot(canvas.transform, "Pause Screen");
         var gameOver = FindPanelRoot(canvas.transform, "GameOverScreen");
@@ -511,6 +531,10 @@ public static class Menu3DUISetup
             unpause.onClick.RemoveAllListeners();
             unpause.onClick.AddListener(uiManager.TogglePause);
         }
+
+        if (pause != null)
+            SfMainMenuButtonStyler.ApplyToPausePanelInScene(pause.transform);
+        SfMainMenuButtonStyler.ApplyToGameOverAndVictoryPrefabs();
 
         PrefabUtility.SaveAsPrefabAsset(root, path);
         PrefabUtility.UnloadPrefabContents(root);
@@ -736,6 +760,13 @@ public static class Menu3DUISetup
             return;
         c.renderMode = RenderMode.ScreenSpaceOverlay;
         c.worldCamera = null;
+    }
+
+    static void EnsureInGameButtonLayout(GameObject canvas)
+    {
+        if (canvas.GetComponent<InGameButtonLayout>() == null)
+            canvas.AddComponent<InGameButtonLayout>();
+        EditorUtility.SetDirty(canvas);
     }
 
     static void EnsureUICameraBinder(GameObject canvas)

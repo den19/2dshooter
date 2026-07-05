@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Restore Menu 3D prefab pause panel on Level1/3/4 to match Level2."""
+"""Restore Menu 3D prefab pause panel on level scenes and normalize in-game button sizing."""
 from __future__ import annotations
 
 import re
@@ -10,6 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCENES = [
     ROOT / "Assets" / "_Scenes" / "Level1.unity",
+    ROOT / "Assets" / "_Scenes" / "Level2.unity",
     ROOT / "Assets" / "_Scenes" / "Level3.unity",
     ROOT / "Assets" / "_Scenes" / "Level4.unity",
 ]
@@ -18,6 +19,23 @@ CANVAS_GUID = "7135b71d079e09345a61f0a94d870493"
 UI_MANAGER_GUID = "1c0df30cd27710240931e8cee3eaa949"
 CANVAS_INSTANCE_ID = "6492225691611727013"
 PAUSE_REMOVED = f"{{fileID: 5098315453134981279, guid: {CANVAS_GUID}, type: 3}}"
+
+PAUSE_PANEL_WIDTH = 1080
+PAUSE_PANEL_HEIGHT = 600
+
+# RectTransform fileIDs inside CanvasInGameUI prefab that should not be overridden in scenes.
+STALE_BUTTON_RECT_IDS = {
+    "181718364923319002",  # Unpause Button
+    "4916492738718526030",  # Main Menu Button (1)
+    "773380360132880828",  # legacy Main Menu Button (1)
+}
+
+PAUSE_PANEL_RECT_IDS = {
+    "7160744394460488682",  # Pause Screen root
+    "302993721072323702",  # legacy pause panel rect
+}
+
+PAUSE_SCREEN_GO_ID = "5098315453134981279"
 
 PAUSE_ANIM_STRIPPED = """--- !u!95 &1164040838 stripped
 Animator:
@@ -36,7 +54,7 @@ PAUSE_SIZE_OVERRIDES = """
       objectReference: {fileID: 0}
     - target: {fileID: 7160744394460488682, guid: 7135b71d079e09345a61f0a94d870493, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 400
+      value: 1080
       objectReference: {fileID: 0}
     - target: {fileID: 7160744394460488682, guid: 7135b71d079e09345a61f0a94d870493, type: 3}
       propertyPath: m_SizeDelta.y
@@ -127,19 +145,84 @@ def collect_legacy_pause_ids(docs: list[str], root_go_id: str) -> set[str]:
 
 def remove_corrupt_pause_overrides(text: str) -> str:
     """Remove pause overrides accidentally inserted into non-canvas prefab instances."""
-    corrupt = (
-        r"\n\n    - target: \{fileID: 5098315453134981279, guid: "
+    for width in ("400", "1080"):
+        corrupt = (
+            r"\n\n    - target: \{fileID: 5098315453134981279, guid: "
+            + CANVAS_GUID
+            + r", type: 3\}\n      propertyPath: m_IsActive\n      value: 0\n      objectReference: \{fileID: 0\}\n"
+            r"    - target: \{fileID: 7160744394460488682, guid: "
+            + CANVAS_GUID
+            + r", type: 3\}\n      propertyPath: m_SizeDelta\.x\n      value: "
+            + width
+            + r"\n      objectReference: \{fileID: 0\}\n"
+            r"    - target: \{fileID: 7160744394460488682, guid: "
+            + CANVAS_GUID
+            + r", type: 3\}\n      propertyPath: m_SizeDelta\.y\n      value: 600\n      objectReference: \{fileID: 0\}\n"
+            r"    m_AddedGameObjects: \[\]\n    m_AddedComponents: \[\]\n  m_SourcePrefab: \{fileID: 100100000, guid: (?!7135b71d)"
+        )
+        text = re.sub(
+            corrupt,
+            r"\n    m_AddedGameObjects: []\n    m_AddedComponents: []\n  m_SourcePrefab: {fileID: 100100000, guid: ",
+            text,
+        )
+    return text
+
+
+def _remove_canvas_modification(text: str, rect_id: str) -> str:
+    pattern = (
+        r"\n    - target: \{fileID: "
+        + rect_id
+        + r", guid: "
         + CANVAS_GUID
-        + r", type: 3\}\n      propertyPath: m_IsActive\n      value: 0\n      objectReference: \{fileID: 0\}\n"
-        r"    - target: \{fileID: 7160744394460488682, guid: "
-        + CANVAS_GUID
-        + r", type: 3\}\n      propertyPath: m_SizeDelta\.x\n      value: 400\n      objectReference: \{fileID: 0\}\n"
-        r"    - target: \{fileID: 7160744394460488682, guid: "
-        + CANVAS_GUID
-        + r", type: 3\}\n      propertyPath: m_SizeDelta\.y\n      value: 600\n      objectReference: \{fileID: 0\}\n"
-        r"    m_AddedGameObjects: \[\]\n    m_AddedComponents: \[\]\n  m_SourcePrefab: \{fileID: 100100000, guid: (?!7135b71d)"
+        + r", type: 3\}\n      propertyPath: [^\n]+\n      value: [^\n]+\n      objectReference: \{fileID: \d+\}"
     )
-    return re.sub(corrupt, r"\n    m_AddedGameObjects: []\n    m_AddedComponents: []\n  m_SourcePrefab: {fileID: 100100000, guid: ", text)
+    return re.sub(pattern, "", text)
+
+
+def _set_pause_panel_size(text: str, rect_id: str) -> str:
+    text = re.sub(
+        r"(target: \{fileID: "
+        + rect_id
+        + r", guid: "
+        + CANVAS_GUID
+        + r", type: 3\}\n      propertyPath: m_SizeDelta\.x\n      value: )\d+",
+        rf"\g<1>{PAUSE_PANEL_WIDTH}",
+        text,
+    )
+    return re.sub(
+        r"(target: \{fileID: "
+        + rect_id
+        + r", guid: "
+        + CANVAS_GUID
+        + r", type: 3\}\n      propertyPath: m_SizeDelta\.y\n      value: )\d+",
+        rf"\g<1>{PAUSE_PANEL_HEIGHT}",
+        text,
+    )
+
+
+def fix_in_game_button_overrides(text: str) -> str:
+    """Drop stale button overrides and normalize pause panel width in CanvasInGameUI instances."""
+    for rect_id in STALE_BUTTON_RECT_IDS:
+        text = _remove_canvas_modification(text, rect_id)
+
+    for rect_id in PAUSE_PANEL_RECT_IDS:
+        if rect_id in text:
+            text = _set_pause_panel_size(text, rect_id)
+
+    return text
+
+
+def fix_pause_panel_active(text: str) -> str:
+    """Ensure Pause Screen prefab override keeps the panel inactive on level start."""
+    return re.sub(
+        r"(target: \{fileID: "
+        + PAUSE_SCREEN_GO_ID
+        + r", guid: "
+        + CANVAS_GUID
+        + r", type: 3\}\n      propertyPath: m_IsActive\n      value: )1(\n)",
+        r"\g<1>0\2",
+        text,
+    )
 
 
 def extract_canvas_ui_block(text: str) -> str:
@@ -269,6 +352,9 @@ def find_orphan_legacy_pause_root_ids(docs: list[str]) -> set[str]:
         if "Unpause" in name:
             orphan_go_ids.add(go_id)
             continue
+        if name == "Main Menu Button (1)":
+            orphan_go_ids.add(go_id)
+            continue
         if name != "Title":
             continue
         for comp_id in go_components.get(go_id, []):
@@ -375,11 +461,13 @@ def fix_scene(path: Path, donor: Path | None = None) -> None:
     else:
         text = "".join(docs)
 
-    text = fix_canvas_prefab_instance(text, LEGACY_RECT_IDS[path.name])
-    text = fix_ui_manager(text, LEGACY_ANIM_IDS[path.name])
+    text = fix_canvas_prefab_instance(text, LEGACY_RECT_IDS.get(path.name, "0"))
+    text = fix_ui_manager(text, LEGACY_ANIM_IDS.get(path.name, "0"))
     text = fix_ui_manager_panels(text)
     text = fix_backdrop_override(text)
-    if path.name in ("Level3.unity", "Level4.unity"):
+    text = fix_in_game_button_overrides(text)
+    text = fix_pause_panel_active(text)
+    if path.name in ("Level2.unity", "Level3.unity", "Level4.unity"):
         text = fix_canvas_scaler(text)
 
     path.write_text(text, encoding="utf-8")
@@ -387,23 +475,19 @@ def fix_scene(path: Path, donor: Path | None = None) -> None:
 
 
 def main() -> int:
-    level1 = ROOT / "Assets" / "_Scenes" / "Level1.unity"
-    level3 = ROOT / "Assets" / "_Scenes" / "Level3.unity"
     level4 = ROOT / "Assets" / "_Scenes" / "Level4.unity"
+    level3 = ROOT / "Assets" / "_Scenes" / "Level3.unity"
 
-    for scene in (level1, level3):
+    for scene in SCENES:
         if not scene.exists():
             print(f"Missing scene: {scene}", file=sys.stderr)
             return 1
-        fix_scene(scene)
 
-    if not level4.exists():
-        print(f"Missing scene: {level4}", file=sys.stderr)
-        return 1
+        donor = None
+        if scene == level4 and f"--- !u!1001 &{CANVAS_INSTANCE_ID}\n" not in scene.read_text(encoding="utf-8"):
+            donor = level3
+        fix_scene(scene, donor=donor)
 
-    level4_text = level4.read_text(encoding="utf-8")
-    donor = level3 if f"--- !u!1001 &{CANVAS_INSTANCE_ID}\n" not in level4_text else None
-    fix_scene(level4, donor=donor)
     return 0
 
 

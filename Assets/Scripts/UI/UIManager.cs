@@ -175,6 +175,23 @@ public class UIManager : MonoBehaviour
         {
             GoToPage(defaultPage);
         }
+
+        EnsurePausePanelClosedOnStart();
+    }
+
+    void EnsurePausePanelClosedOnStart()
+    {
+        if (isPaused || !allowPause || panels == null)
+            return;
+        if (pausePageIndex < 0 || pausePageIndex >= panels.Count)
+            return;
+
+        var pausePanel = panels[pausePageIndex];
+        if (pausePanel == null)
+            return;
+
+        pausePanel.SetBool("Open", false);
+        pausePanel.gameObject.SetActive(false);
     }
 
     private bool isFirstTouchDown = false;
