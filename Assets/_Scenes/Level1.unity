@@ -7535,6 +7535,14 @@ PrefabInstance:
       propertyPath: m_sharedMaterial
       value: 
       objectReference: {fileID: 2100000, guid: fdfc20d344e697f4b9959d40ba576a62, type: 2}
+    - target: {fileID: 3616352920519792846, guid: 7135b71d079e09345a61f0a94d870493, type: 3}
+      propertyPath: m_Type
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3616352920519792846, guid: 7135b71d079e09345a61f0a94d870493, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: d3ad346b695d4b9ea44c4aff82220e3d, type: 3}
     - target: {fileID: 3857265630155408468, guid: 7135b71d079e09345a61f0a94d870493, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: 36

@@ -842,9 +842,6 @@ Animator:
   m_CorrespondingSourceObject: {fileID: 7741301178286372875, guid: 7135b71d079e09345a61f0a94d870493, type: 3}
   m_PrefabInstance: {fileID: 6492225691611727013}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
 --- !u!1001 &124189430
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4846,9 +4843,6 @@ Animator:
   m_CorrespondingSourceObject: {fileID: 2044829397730045367, guid: 7135b71d079e09345a61f0a94d870493, type: 3}
   m_PrefabInstance: {fileID: 6492225691611727013}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
 --- !u!1001 &870629934
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6533,9 +6527,6 @@ Animator:
   m_CorrespondingSourceObject: {fileID: 5586925435619079409, guid: 7135b71d079e09345a61f0a94d870493, type: 3}
   m_PrefabInstance: {fileID: 6492225691611727013}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
 --- !u!1001 &1213516561
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11998,6 +11989,14 @@ PrefabInstance:
       propertyPath: m_SizeDelta.y
       value: 1300
       objectReference: {fileID: 0}
+    - target: {fileID: 3616352920519792846, guid: 7135b71d079e09345a61f0a94d870493, type: 3}
+      propertyPath: m_Type
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3616352920519792846, guid: 7135b71d079e09345a61f0a94d870493, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: d3ad346b695d4b9ea44c4aff82220e3d, type: 3}
     - target: {fileID: 3703921021851551739, guid: 7135b71d079e09345a61f0a94d870493, type: 3}
       propertyPath: m_IsActive
       value: 1
