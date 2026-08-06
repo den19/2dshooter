@@ -1966,7 +1966,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
   m_AnchoredPosition: {x: -2.7096, y: 77}
-  m_SizeDelta: {x: 277.378, y: 84.5723}
+  m_SizeDelta: {x: 420, y: 84.5723}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!1 &507851371821062971
 GameObject:
@@ -1995,6 +1995,7 @@ GameObject:
   - component: {fileID: 288727165319881287}
   - component: {fileID: 7868044803432529408}
   - component: {fileID: 1769561491118503918}
+  - component: {fileID: 1769561491118503919}
   m_Layer: 5
   m_Name: MainMenuTitle
   m_TagString: Untagged
@@ -2121,6 +2122,21 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &1769561491118503919
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 843586567950610145}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c4a9e2b1f8d4a6e9b3c5d0e8a1f2b4c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  titleBase: AsurviL
+  versionSizePercent: 42
+  versionAlpha: 176
 --- !u!4 &2816445443536767684
 Transform:
   m_ObjectHideFlags: 0
