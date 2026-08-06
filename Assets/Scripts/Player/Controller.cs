@@ -228,37 +228,26 @@ public class Controller : MonoBehaviour
 
     void MoveShip()
     {
-        GetScreenLimits(out float horizontalLimit, out float verticalLimit);
+        // Лимитируем движение корабля рамками экрана
+        float horizontalLimit = Camera.main.aspect * Camera.main.orthographicSize;
+        float verticalLimit = Camera.main.orthographicSize;
 
         float xClamped = Mathf.Clamp(touchPosition.x, -horizontalLimit + boundaryMargin, horizontalLimit - boundaryMargin);
         float yClamped = Mathf.Clamp(touchPosition.y, -verticalLimit + boundaryMargin, verticalLimit - boundaryMargin);
 
-        var targetPosition = new Vector3(xClamped, yClamped, transform.position.z);
+        // Определяем направление движения
+        //Vector3 targetPosition = new Vector3(xClamped, yClamped, transform.position.z);
+        var targetPosition = new Vector3(touchPosition.x, touchPosition.y, transform.position.z);
 
+        // Применяем SmoothDamp для плавного движения
         transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref velocity, smoothAccelerationTime);
-        ClampPositionToScreen();
+
     }
 
     void DecelerateShip()
     {
-        // Bleed off residual SmoothDamp velocity so the ship coasts to a stop
-        transform.position = Vector3.SmoothDamp(transform.position, transform.position, ref velocity, smoothDecelerationTime);
-        ClampPositionToScreen();
-    }
-
-    void GetScreenLimits(out float horizontalLimit, out float verticalLimit)
-    {
-        horizontalLimit = Camera.main.aspect * Camera.main.orthographicSize;
-        verticalLimit = Camera.main.orthographicSize;
-    }
-
-    void ClampPositionToScreen()
-    {
-        GetScreenLimits(out float horizontalLimit, out float verticalLimit);
-        Vector3 pos = transform.position;
-        pos.x = Mathf.Clamp(pos.x, -horizontalLimit + boundaryMargin, horizontalLimit - boundaryMargin);
-        pos.y = Mathf.Clamp(pos.y, -verticalLimit + boundaryMargin, verticalLimit - boundaryMargin);
-        transform.position = pos;
+        // Постепенное снижение скорости при отпускании касания
+        velocity = Vector3.SmoothDamp(velocity, Vector3.zero, ref velocity, smoothDecelerationTime);
     }
 
     /// <summary>

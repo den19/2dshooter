@@ -78,8 +78,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Destroy(gameObject);
-            return;
+            DestroyImmediate(this);
         }
 
         if ((player == null) && (FindObjectOfType<Controller>() != null))
@@ -314,9 +313,7 @@ public class GameManager : MonoBehaviour
         PlayerPrefs.SetInt("score", score);
         if (UIManager.instance != null)
         {
-            UIManager.instance.ForceResumeTime();
-            if (player != null)
-                player.SetActive(false);
+            player.SetActive(false);
             UIManager.instance.allowPause = false;
             UIManager.instance.GoToPage(gameVictoryPageIndex);
             if (victoryEffect != null)
@@ -353,7 +350,6 @@ public class GameManager : MonoBehaviour
         }
         if (UIManager.instance != null)
         {
-            UIManager.instance.ForceResumeTime();
             UIManager.instance.allowPause = false;
             UIManager.instance.GoToPage(gameOverPageIndex);
         }
