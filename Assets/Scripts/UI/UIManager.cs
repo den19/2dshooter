@@ -145,6 +145,16 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Clears pause state and restores time scale (e.g. on game over / victory).
+    /// Works even when allowPause is already false.
+    /// </summary>
+    public void ForceResumeTime()
+    {
+        Time.timeScale = 1f;
+        isPaused = false;
+    }
+
     public void UpdateUI()
     {
         SetUpUIElements();
@@ -159,7 +169,7 @@ public class UIManager : MonoBehaviour
         if (instance == null)
             instance = this;
         else
-            Destroy(this);
+            Destroy(gameObject);
     }
 
     private void Start()
@@ -203,6 +213,9 @@ public class UIManager : MonoBehaviour
         CheckPauseInput();
         if (Application.platform == RuntimePlatform.Android)
         {
+            if (isFirstTouchDown && (Time.unscaledTime - firstTouchTime) > DOUBLE_TAP_INTERVAL)
+                ResetTouchState();
+
             if (Input.touchCount > 0 && Input.GetTouch(0).phase == UnityEngine.TouchPhase.Began)
                 HandleTouch();
         }
@@ -214,12 +227,19 @@ public class UIManager : MonoBehaviour
         {
             isFirstTouchDown = true;
             firstTouchTime = Time.unscaledTime;
+            return;
+        }
+
+        if ((Time.unscaledTime - firstTouchTime) <= DOUBLE_TAP_INTERVAL)
+        {
+            OnDoubleTap();
+            ResetTouchState();
         }
         else
         {
-            if ((Time.unscaledTime - firstTouchTime) <= DOUBLE_TAP_INTERVAL)
-                OnDoubleTap();
-            ResetTouchState();
+            // Late tap starts a new double-tap window instead of being discarded
+            isFirstTouchDown = true;
+            firstTouchTime = Time.unscaledTime;
         }
     }
 
