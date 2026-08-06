@@ -1,0 +1,23 @@
+---
+description: When user says «установи APK» / install apk / adb install — build then ADB USB install
+alwaysApply: true
+---
+
+# Install APK via ADB (USB)
+
+When the user asks to **установи APK**, **install apk**, **adb install**, **залей APK по usb**, or equivalent:
+
+1. Do **not** auto-install after unrelated edits — only on that explicit request.
+2. If building (default): ensure Unity Editor is closed (`Temp\UnityLockfile` absent); if locked, ask to close Editor. For install-only (`-SkipBuild`), Editor may stay open.
+3. Ensure `Tools/keystore.local.ps1` exists with a real `$KeystorePassword` when building (same as build-apk).
+4. Run: `powershell -ExecutionPolicy Bypass -File Tools\install_apk_adb.ps1`
+   - Install only: add `-SkipBuild`
+   - Default APK: `{projectRoot}/SpacePrisonAsurvil.apk`
+   - Package id: `com.densappstudio.asurvil`
+5. Script resolves `adb.exe` (ANDROID_HOME / LOCALAPPDATA Sdk / Unity AndroidPlayer SDK), checks devices, then `adb install -r`.
+6. If device is **unauthorized**: tell the user to Accept USB debugging on the phone, then retry.
+7. If no device / multiple devices: report clearly; for multiple, pass `-Serial`.
+8. If install fails with signature mismatch, suggest: `adb uninstall com.densappstudio.asurvil` then `-SkipBuild`.
+9. Report adb output / success.
+
+Docs: `C:\git\pipeline\2dshooter\ADB_PIPELINE.ru.md`

@@ -81,6 +81,15 @@ mono_crash.*
 *.unitypackage.meta
 *.app
 
+# Release APK pipeline
+build_apk.log
+Tools/keystore.local.ps1
+
+# Bluetooth OBEX push tool (Tools/BluetoothObexPush) — keep project, ignore build output
+!Tools/BluetoothObexPush/*.csproj
+Tools/BluetoothObexPush/bin/
+Tools/BluetoothObexPush/obj/
+
 # Crashlytics generated file
 crashlytics-build.properties
 

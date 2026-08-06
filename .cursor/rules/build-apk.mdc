@@ -1,0 +1,18 @@
+---
+description: When user says «собери APK» / build apk — run release signed build with version bump
+alwaysApply: true
+---
+
+# Build Release APK
+
+When the user asks to **собери APK**, **build apk**, or equivalent:
+
+1. Do **not** auto-build after unrelated edits — only on that explicit request.
+2. Ensure Unity Editor is closed (`Temp\UnityLockfile` absent); if locked, ask to close Editor.
+3. Ensure `Tools/keystore.local.ps1` exists with a real `$KeystorePassword` (same for keystore + alias `asurvil`). If missing, ask the user for the password, write the gitignored file from `Tools/keystore.local.ps1.example`, and **never commit** it.
+4. Run: `powershell -ExecutionPolicy Bypass -File Tools\build_apk.ps1`
+5. Expect output: `{projectRoot}/SpacePrisonAsurvil.apk` signed with `C:/git/MyUnity6.4KeyStore/user.keystore` alias `asurvil`.
+6. The Unity method bumps Version (last segment after the last dot) and sets Bundle Version Code to that integer — do not skip the bump.
+7. **Never** fall back to Unity debug signing. If the password or keystore is missing, fail and report — do not work around it.
+
+Docs: `C:\git\pipeline\2dshooter\RELEASE_PIPELINE.ru.md`

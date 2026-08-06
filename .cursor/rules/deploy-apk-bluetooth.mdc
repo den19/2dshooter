@@ -1,0 +1,20 @@
+---
+description: When user says «отправь APK» / send apk / bluetooth apk — build then Bluetooth OBEX deploy
+alwaysApply: true
+---
+
+# Deploy APK via Bluetooth
+
+When the user asks to **отправь APK**, **залей APK на телефон**, **send apk**, **bluetooth apk**, or equivalent:
+
+1. Do **not** auto-deploy after unrelated edits — only on that explicit request.
+2. Ensure Unity Editor is closed (`Temp\UnityLockfile` absent) unless the user asks to skip build (`-SkipBuild`); if locked and a build is needed, ask to close Editor.
+3. Ensure `Tools/keystore.local.ps1` exists with a real `$KeystorePassword` (same rules as build-apk) when building.
+4. Run: `powershell -ExecutionPolicy Bypass -File Tools\deploy_apk_bluetooth.ps1`
+   - Default device name: `TECHNO POVA 7 Ultra 5G`
+   - Default APK: `{projectRoot}/SpacePrisonAsurvil.apk`
+5. Flow: `build_apk.ps1` → headless OBEX push (`Tools/BluetoothObexPush`) → on failure open `fsquirt.exe` and report manual steps.
+6. Remind the user to **Accept** the file on the phone if prompted.
+7. Report whether auto OBEX succeeded or that the fsquirt fallback was opened.
+
+Docs: `C:\git\pipeline\2dshooter\BLUETOOTH_DEPLOY_PIPELINE.ru.md`
