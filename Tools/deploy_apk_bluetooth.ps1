@@ -4,14 +4,20 @@
 # Usage (Unity Editor must be CLOSED unless -SkipBuild):
 #   powershell -ExecutionPolicy Bypass -File Tools\deploy_apk_bluetooth.ps1
 #   powershell -ExecutionPolicy Bypass -File Tools\deploy_apk_bluetooth.ps1 -SkipBuild
-#   powershell -ExecutionPolicy Bypass -File Tools\deploy_apk_bluetooth.ps1 -DeviceName "TECHNO POVA 7 Ultra 5G"
+#   powershell -ExecutionPolicy Bypass -File Tools\deploy_apk_bluetooth.ps1 -Phone camon
+#   powershell -ExecutionPolicy Bypass -File Tools\deploy_apk_bluetooth.ps1 -Phone pova
+#   powershell -ExecutionPolicy Bypass -File Tools\deploy_apk_bluetooth.ps1 -DeviceName "TECNO CAMON 20 Pro"
 #
-# Default device: TECHNO POVA 7 Ultra 5G
+# Known phones (see Tools/phone_targets.ps1):
+#   pova  -> TECNO POVA 7 Ultra 5G
+#   camon -> TECNO CAMON 20 Pro
+# Default (no -Phone/-DeviceName): try all known phones (first found wins).
 # Default APK:    {projectRoot}/SpacePrisonAsurvil.apk
 
 [CmdletBinding()]
 param(
-    [string] $DeviceName = "TECHNO POVA 7 Ultra 5G",
+    [string] $Phone = "",
+    [string] $DeviceName = "",
     [string] $ApkPath = "",
     [string] $ProjectPath = "",
     [switch] $SkipBuild,
@@ -20,6 +26,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+. (Join-Path $PSScriptRoot "phone_targets.ps1")
 
 function Get-ProjectRoot {
     if ($ProjectPath) {
@@ -69,10 +77,12 @@ if ([string]::IsNullOrWhiteSpace($ApkPath)) {
 
 $obexProject = Join-Path $root "Tools\BluetoothObexPush\BluetoothObexPush.csproj"
 $buildScript = Join-Path $root "Tools\build_apk.ps1"
+$deviceCandidates = @(Get-BluetoothDeviceCandidates -Phone $Phone -DeviceName $DeviceName)
+$deviceLabel = if ($deviceCandidates.Count -eq 1) { $deviceCandidates[0] } else { ($deviceCandidates -join " | ") }
 
 Write-Host "Project: $root"
 Write-Host "APK:     $ApkPath"
-Write-Host "Device:  $DeviceName"
+Write-Host "Device:  $deviceLabel"
 Write-Host "Build:   $(-not [bool]$SkipBuild)"
 
 if (-not $SkipBuild) {
@@ -103,11 +113,11 @@ if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
 }
 
 Write-Host "Attempting automatic OBEX push..."
-& dotnet run --project $obexProject -c Release -- $ApkPath $DeviceName
+& dotnet run --project $obexProject -c Release -- $ApkPath @deviceCandidates
 $obexCode = $LASTEXITCODE
 
 if ($obexCode -eq 0) {
-    Write-Host "Done: APK sent via Bluetooth OBEX to `"$DeviceName`"."
+    Write-Host "Done: APK sent via Bluetooth OBEX (targets: $deviceLabel)."
     exit 0
 }
 
@@ -115,5 +125,5 @@ if ($NoFsquirtFallback) {
     Write-Error "Auto OBEX failed (exit $obexCode) and -NoFsquirtFallback was set."
 }
 
-Invoke-FsquirtFallback -Apk $ApkPath -Device $DeviceName -Reason "exit code $obexCode"
+Invoke-FsquirtFallback -Apk $ApkPath -Device $deviceLabel -Reason "exit code $obexCode"
 exit $obexCode

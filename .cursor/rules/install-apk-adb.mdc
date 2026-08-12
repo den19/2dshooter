@@ -12,11 +12,14 @@ When the user asks to **установи APK**, **install apk**, **adb install**
 3. Ensure `Tools/keystore.local.ps1` exists with a real `$KeystorePassword` when building (same as build-apk).
 4. Run: `powershell -ExecutionPolicy Bypass -File Tools\install_apk_adb.ps1`
    - Install only: add `-SkipBuild`
+   - Known phones (`Tools/phone_targets.ps1`): `TECNO POVA 7 Ultra 5G` (`-Phone pova`, serial `1445125581103151`), `TECNO CAMON 20 Pro` (`-Phone camon`, serial `1026225377001850`)
+   - If the user names a phone (CAMON / второй / POVA) → pass `-Phone camon` or `-Phone pova`
+   - If multiple USB devices and phone not specified → report and ask, or pass `-Serial`
    - Default APK: `{projectRoot}/SpacePrisonAsurvil.apk`
    - Package id: `com.densappstudio.asurvil`
 5. Script resolves `adb.exe` (ANDROID_HOME / LOCALAPPDATA Sdk / Unity AndroidPlayer SDK), checks devices, then `adb install -r`.
 6. If device is **unauthorized**: tell the user to Accept USB debugging on the phone, then retry.
-7. If no device / multiple devices: report clearly; for multiple, pass `-Serial`.
+7. If no device / multiple devices: report clearly; for multiple, pass `-Phone` or `-Serial`.
 8. If install fails with signature mismatch, suggest: `adb uninstall com.densappstudio.asurvil` then `-SkipBuild`.
 9. Report adb output / success.
 

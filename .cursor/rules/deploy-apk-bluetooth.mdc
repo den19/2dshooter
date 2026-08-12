@@ -11,7 +11,9 @@ When the user asks to **отправь APK**, **залей APK на телефо
 2. Ensure Unity Editor is closed (`Temp\UnityLockfile` absent) unless the user asks to skip build (`-SkipBuild`); if locked and a build is needed, ask to close Editor.
 3. Ensure `Tools/keystore.local.ps1` exists with a real `$KeystorePassword` (same rules as build-apk) when building.
 4. Run: `powershell -ExecutionPolicy Bypass -File Tools\deploy_apk_bluetooth.ps1`
-   - Default device name: `TECHNO POVA 7 Ultra 5G`
+   - Known phones (`Tools/phone_targets.ps1`): `TECNO POVA 7 Ultra 5G` (`-Phone pova`), `TECNO CAMON 20 Pro` (`-Phone camon`)
+   - If the user names a phone (CAMON / второй / POVA) → pass `-Phone camon` or `-Phone pova`
+   - If unspecified → script tries all known phones (first found wins)
    - Default APK: `{projectRoot}/SpacePrisonAsurvil.apk`
 5. Flow: `build_apk.ps1` → headless OBEX push (`Tools/BluetoothObexPush`) → on failure open `fsquirt.exe` and report manual steps.
 6. Remind the user to **Accept** the file on the phone if prompted.

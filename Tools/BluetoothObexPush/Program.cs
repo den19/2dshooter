@@ -1,4 +1,4 @@
-using InTheHand.Net;
+﻿using InTheHand.Net;
 using InTheHand.Net.Bluetooth;
 using InTheHand.Net.Sockets;
 
@@ -11,17 +11,21 @@ static int Fail(string message, int code = 1)
 if (args.Length < 2)
 {
     return Fail(
-        "Usage: BluetoothObexPush <apkPath> <deviceName>\n" +
-        "Example: BluetoothObexPush SpacePrisonAsurvil.apk \"TECHNO POVA 7 Ultra 5G\"");
+        "Usage: BluetoothObexPush <apkPath> <deviceName> [<deviceName2> ...]\n" +
+        "Example: BluetoothObexPush app.apk \"TECNO POVA 7 Ultra 5G\" \"TECNO CAMON 20 Pro\"");
 }
 
 var apkPath = Path.GetFullPath(args[0]);
-var deviceName = args[1].Trim();
+var deviceNames = args.Skip(1)
+    .Select(a => a.Trim())
+    .Where(a => !string.IsNullOrWhiteSpace(a))
+    .Distinct(StringComparer.OrdinalIgnoreCase)
+    .ToArray();
 
 if (!File.Exists(apkPath))
     return Fail($"APK not found: {apkPath}");
 
-if (string.IsNullOrWhiteSpace(deviceName))
+if (deviceNames.Length == 0)
     return Fail("Device name is empty.");
 
 var radio = BluetoothRadio.Default;
@@ -42,28 +46,29 @@ if (radio.Mode == RadioMode.PowerOff)
 }
 
 Console.WriteLine($"Radio: {radio.Name} ({radio.LocalAddress}), mode={radio.Mode}");
-Console.WriteLine($"Looking for paired device: \"{deviceName}\"");
+Console.WriteLine($"Looking for device among: {string.Join(" | ", deviceNames.Select(n => $"\"{n}\""))}");
+
+bool NameMatches(BluetoothDeviceInfo d) =>
+    deviceNames.Any(n => string.Equals(d.DeviceName, n, StringComparison.OrdinalIgnoreCase));
 
 BluetoothDeviceInfo? device;
 using (var client = new BluetoothClient())
 {
-    device = client.PairedDevices
-        .FirstOrDefault(d => string.Equals(d.DeviceName, deviceName, StringComparison.OrdinalIgnoreCase));
+    device = client.PairedDevices.FirstOrDefault(NameMatches);
 
     if (device is null)
     {
         Console.WriteLine("Not in paired list; discovering nearby devices...");
         var discovered = client.DiscoverDevices(30);
-        device = discovered.FirstOrDefault(d =>
-            string.Equals(d.DeviceName, deviceName, StringComparison.OrdinalIgnoreCase));
+        device = discovered.FirstOrDefault(NameMatches);
     }
 }
 
 if (device is null)
 {
     return Fail(
-        $"Device \"{deviceName}\" not found among paired/discovered devices.\n" +
-        "Pair it in Windows Settings → Bluetooth, keep it nearby, then retry.");
+        $"None of the target devices found among paired/discovered devices:\n  {string.Join("\n  ", deviceNames)}\n" +
+        "Pair the phone in Windows Settings → Bluetooth, keep it nearby, then retry.");
 }
 
 device.Refresh();

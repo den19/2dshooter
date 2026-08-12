@@ -3,8 +3,13 @@
 # Usage (Unity Editor must be CLOSED unless -SkipBuild):
 #   powershell -ExecutionPolicy Bypass -File Tools\install_apk_adb.ps1
 #   powershell -ExecutionPolicy Bypass -File Tools\install_apk_adb.ps1 -SkipBuild
+#   powershell -ExecutionPolicy Bypass -File Tools\install_apk_adb.ps1 -Phone camon
+#   powershell -ExecutionPolicy Bypass -File Tools\install_apk_adb.ps1 -Phone pova
 #   powershell -ExecutionPolicy Bypass -File Tools\install_apk_adb.ps1 -Serial 1445125581103151
 #
+# Known phones (see Tools/phone_targets.ps1):
+#   pova  -> TECNO POVA 7 Ultra 5G (serial 1445125581103151)
+#   camon -> TECNO CAMON 20 Pro (serial `1026225377001850`)
 # Default APK: {projectRoot}/SpacePrisonAsurvil.apk
 # Package id:  com.densappstudio.asurvil
 #
@@ -18,11 +23,14 @@ param(
     [string] $ProjectPath = "",
     [string] $AdbPath = "",
     [string] $Serial = "",
+    [string] $Phone = "",
     [switch] $SkipBuild,
     [switch] $SkipEditorLockCheck
 )
 
 $ErrorActionPreference = "Stop"
+
+. (Join-Path $PSScriptRoot "phone_targets.ps1")
 
 function Get-ProjectRoot {
     if ($ProjectPath) {
@@ -125,6 +133,7 @@ Write-Host "Project: $root"
 Write-Host "APK:     $ApkPath"
 Write-Host "ADB:     $adb"
 Write-Host "Build:   $(-not [bool]$SkipBuild)"
+if ($Phone) { Write-Host "Phone:   $Phone" }
 
 if (-not $SkipBuild) {
     if (-not (Test-Path -LiteralPath $buildScript)) {
@@ -169,20 +178,23 @@ $list
 "@
 }
 
-$targetSerial = $Serial
+$targetSerial = Resolve-AdbSerialForPhone -Adb $adb -ReadyDevices $ready -Phone $Phone -Serial $Serial
 if ([string]::IsNullOrWhiteSpace($targetSerial)) {
     if ($ready.Count -gt 1) {
         $list = ($ready | ForEach-Object { "  $($_.Serial)" }) -join "`n"
         Write-Error @"
-Multiple devices attached. Pass -Serial <id>:
+Multiple devices attached. Pass -Phone pova|camon or -Serial <id>:
 $list
+
+Known phones:
+$(Get-KnownPhoneHelp)
 "@
     }
     $targetSerial = $ready[0].Serial
 } else {
     $match = $ready | Where-Object { $_.Serial -eq $targetSerial } | Select-Object -First 1
     if (-not $match) {
-        Write-Error "Serial '$targetSerial' not found among ready devices. Run: `"$adb`" devices"
+        Write-Error "Serial '$targetSerial' not found among ready devices. Run: `"$adb`" devices -l"
     }
 }
 
